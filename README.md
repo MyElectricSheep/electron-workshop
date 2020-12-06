@@ -971,3 +971,12 @@ If you finish early, here are some ideas for extra features to add:
 3. :bowtie: Add emoji support, like the [vmd](https://github.com/yoshuawuyts/vmd) markdown editor has.
 
 4. Add file watching support, like the [vmd](https://github.com/yoshuawuyts/vmd) markdown editor has. Make it so local files that are opened are watched for changes and the viewer will automatically update when a file has been changed. This makes it ideal for writing documents in your favorite text editor so you get a live preview. In "watch mode", the editor textarea should be hidden since the user will using their own editor.
+
+### Fixing the warning messages in the console:
+   
+1. `Electron Security Warning (Insecure Content-Security-Policy) This renderer process has either no Content Security Policy set or a policy with "unsafe-eval" enabled. This exposes users of this app to unnecessary security risks.`
+
+A Content Security Policy (CSP) is an additional layer of protection against cross-site-scripting attacks and data injection attacks. [It is recommended](https://www.electronjs.org/docs/tutorial/security#6-define-a-content-security-policy) that they be enabled by any website you load inside Electron.
+   
+To solve this, add the following meta tag inside your main `index.html` file:
+`<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'">`
