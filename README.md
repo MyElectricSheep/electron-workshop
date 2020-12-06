@@ -380,9 +380,7 @@ This won't make anything appear in the window just yet, because we need to handl
 All of the code we've written so far has been in the main process. Now, it's time to write some code in the renderer process to—umm—render our content. Let's load up `renderer.js` by adding the following to `index.html` at the end of the body, right before `</body>`. This means `renderer.js` will be executed as last step of the page rendering and thus the script can access all the previously rendered DOM elements.
 
 ```html
-<script>
-  require('./renderer')
-</script>
+<script src="renderer.js"></script>
 ```
 
 It's going to be helpful to have access to the Chrome Developer Tools in our renderer process. Let's have Electron pull those up when our browser window loads.
@@ -406,7 +404,7 @@ const electron = require('electron')
 const ipc = electron.ipcRenderer
 ```
 
-When we load a file, the main process is sending our renderer process a message with the contents over the `file-opened` channel. (This channel name is completely arbitrary and could very well be `sandwich`.) Let's set up a listener.
+When we load a file, the main process is sending our renderer process a message with the contents over the `file-opened` channel. (This channel name is completely arbitrary and could very well be `chicken`.) Let's set up a listener.
 
 ```js
 ipc.on('file-opened', (event, file, content) => {
@@ -561,19 +559,30 @@ That's all that's required.
 We don't have a mechanism for saving files just yet. As I'm sure you might have guessed, this kind of functionality belongs in the main process—and we'll need to trigger it from the renderer process.
 
 ```js
-function saveFile (content) {
-  const fileName = dialog.showSaveDialog(mainWindow, {
-    title: 'Save HTML Output',
-    defaultPath: app.getPath('documents'),
-    filters: [
-      { name: 'HTML Files', extensions: ['html'] }
-    ]
-  })
+async function saveFile (content) => {
+    let file
 
-  if (!fileName) return
+    try {
+        file = await dialog.showSaveDialog(mainWindow, {
+            title: 'Save HTML Output',
+            defaultPath: app.getPath('documents'),
+            filters: [
+              { name: 'HTML Files', extensions: ['html'] }
+            ]
+          })
+    } catch (e) {
+        console.log(e.message)
+    }
 
-  fs.writeFileSync(fileName, content)
-}
+    console.log(file)
+
+    if (file.canceled) return
+  
+    fs.writeFile(file.filePath, content, 'utf8', (err) => {
+        if (err) return console.log(err.message);
+        console.log('The file has been saved!');
+      });
+  }
 ```
 
 We'll also want to export this functionality in `main.js`:
