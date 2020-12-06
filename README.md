@@ -241,21 +241,27 @@ We'll start by prompting the user for a file to open when the application is rea
 const dialog = electron.dialog
 ```
 
-We're going to want to reuse this functionality, so we'll break it out into its own function.
+We're going to want to reuse this functionality, so we'll break it out into its own function. showOpenDialog is an asynchronous operation; so we can either use .then or async/await here.
 
 ```js
-function openFile () {
-  const files = dialog.showOpenDialog(mainWindow, {
-    properties: ['openFile']
-  })
+async function openFile () {
+    let files;
 
-  if (!files) return
+    try {
+     files = await dialog.showOpenDialog(mainWindow, {
+            properties: ['openFile']
+        })
+    } catch (e) {
+        console.log(e.message)
+    }
+    
+    if (files.canceled) return
 
-  console.log(files)
+    console.log(files)
 }
 ```
 
-We'll call this function immediately once the browser window has loaded. If the user cancels the file open dialog, `files` will be `undefined`. If that happens, we return early so that we don't get any errors down the line.
+We'll call this function immediately once the browser window has loaded. If the user cancels the file open dialog, `files.canceled` will be `true`. If that happens, we return early so that we don't get any errors down the line.
 
 ```js
 app.on('ready', () => {
@@ -276,23 +282,31 @@ app.on('ready', () => {
 })
 ```
 
-Right now, we just log the name of the files selected to the console when we open a file. Try it out. You should notice that it's logging an array to the console. In theory, we're only going to want to open one file at a time in our application. So, we'll just grab the first file from the array.
+Right now, we just log the name of the files selected to the console when we open a file. Try it out. You should notice that it's logging an object to the console containing `canceled` and `filePaths`. In theory, we're only going to want to open one file at a time in our application. So, we'll just grab the first file from the `filePaths` array.
 
 ```js
-function openFile () {
-  const files = dialog.showOpenDialog(mainWindow, {
-    properties: ['openFile']
-  })
+async function openFile () {
+    let files;
 
-  if (!files) return
+    try {
+     files = await dialog.showOpenDialog(mainWindow, {
+            properties: ['openFile']
+        })
+    } catch (e) {
+        console.log(e.message)
+    }
+  
+    if (files.canceled) return
 
-  const file = files[0]
+    console.log(files)
 
-  console.log(file)
+    const file = files.filePaths[0]
+
+    console.log(file)
 }
 ```
 
-Now that we have the location of our file, let's read from that location. `fs.readFileSync` returns a `Buffer` object. We know we're working with text. So, we'll turn that into a string using the `toString()` method.
+Now that we have the location of our file, let's read from that location. `fs.readFile` returns a `Buffer` object if successful. We know we're working with text. So, we'll turn that into a string using the `toString()` method.
 
 Make sure you require the [`fs`](https://nodejs.org/api/fs.html) module towards the beginning of `main.js`:
 
@@ -303,17 +317,33 @@ const fs = require('fs')
 We'll also update `openFile` as follows:
 
 ```js
-function openFile () {
-  const files = dialog.showOpenDialog(mainWindow, {
-    properties: ['openFile']
-  })
+async function openFile () {
+    let files;
 
-  if (!files) return
+    try {
+     files = await dialog.showOpenDialog(mainWindow, {
+            properties: ['openFile'],
+            filters: [
+              { name: 'HTML', extensions: ['html', 'htm'] },
+            ]
+        })
+    } catch (e) {
+        console.log(e.message)
+    }
+  
+    if (files.canceled) return
 
-  const file = files[0]
-  const content = fs.readFileSync(file).toString()
+    console.log(files)
 
-  console.log(content)
+    const file = files.filePaths[0]
+
+    console.log(file)
+
+    fs.readFile(file, (err, data) => {
+        if (err) return console.log(err.message)
+        const content = data.toString()
+        console.log(content)
+    })
 }
 ```
 
