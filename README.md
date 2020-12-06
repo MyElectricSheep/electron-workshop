@@ -894,7 +894,9 @@ $showInFileSystemButton.addEventListener('click', () => {
 })
 
 $openInDefaultEditorButton.addEventListener('click', () => {
-  shell.openItem(currentFile)
+  shell.openPath(currentFile).then(err => {
+       if (err) console.log(err.message)
+    })
 })
 ```
 
