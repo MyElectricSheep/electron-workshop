@@ -322,10 +322,7 @@ async function openFile () {
 
     try {
      files = await dialog.showOpenDialog(mainWindow, {
-            properties: ['openFile'],
-            filters: [
-              { name: 'HTML', extensions: ['html', 'htm'] },
-            ]
+            properties: ['openFile']
         })
     } catch (e) {
         console.log(e.message)
